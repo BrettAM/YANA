@@ -28,8 +28,8 @@ public class TakeNote extends AppCompatActivity {
         EditText text = (EditText) findViewById(R.id.noteField);
         text.setText(subtext);
 
-        NoteDbHelper.NoteDbWrapper ndb = new NoteDbHelper(getApplicationContext()).getNotes();
-        ndb.addUNote(subtext);
+        NoteDbHelper.NoteDbWrapper ndb = new NoteDbHelper(getApplicationContext()).getDb();
+        ndb.newUNote().updateText(subtext);
     }
 
     private void notify(String subject, String text){

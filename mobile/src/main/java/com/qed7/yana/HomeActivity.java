@@ -12,6 +12,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.List;
@@ -48,19 +50,26 @@ public class HomeActivity extends AppCompatActivity
     @Override
     protected void onResume(){
         super.onResume();
-        updateTextField();
+        updateList(getDb());
     }
 
-    public void updateTextField(){
-        NoteDbHelper.NoteDbWrapper ndb = new NoteDbHelper(getApplicationContext()).getNotes();
-        List<NoteDbHelper.NoteDbWrapper.UNote> notes = ndb.getUNotes();
-        StringBuilder builder = new StringBuilder();
-        for(NoteDbHelper.NoteDbWrapper.UNote n : notes){
-            builder.append(n.getData());
-            builder.append("\n");
-        }
-        TextView mainBox = (TextView) findViewById(R.id.MainBox);
-        mainBox.setText(builder.toString());
+    NoteDbHelper.NoteDbWrapper getDb(){
+        return new NoteDbHelper(getApplicationContext()).getDb();
+    }
+
+    public void newNoteButton(View view){
+        TextView input = (TextView) findViewById(R.id.newNoteField);
+        String newNote = input.getText().toString();
+
+        NoteDbHelper.NoteDbWrapper ndb = getDb();
+        ndb.newUNote().updateText(newNote);
+        updateList(ndb);
+    }
+
+    public void updateList(NoteDbHelper.NoteDbWrapper ndb){
+        List<UNote> notes = ndb.getUNotes();
+        ListView list = (ListView) findViewById(R.id.cardList);
+        list.setAdapter(new ArrayAdapter(getApplicationContext(), R.layout.card_list_item, R.id.cardText, notes));
     }
 
     @Override

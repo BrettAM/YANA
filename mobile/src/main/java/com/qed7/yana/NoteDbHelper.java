@@ -40,21 +40,48 @@ public class NoteDbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public static class NoteDbWrapper {
+    public static class NoteDbWrapper implements NoteDb {
         private final SQLiteDatabase db;
         private NoteDbWrapper(SQLiteDatabase db){
             this.db = db;
         }
 
-        public class UNote{
-            private final String data;
+        public class UNoteImpl implements UNote{
+            private String data;
             private final long id;
-            private UNote(String data, long id){
+            private boolean deleted = false;
+            private UNoteImpl(String data, long id){
                 this.data = data;
                 this.id = id;
             }
-            public String getData(){
+            public String getText(){
+                if(deleted) throw new IllegalStateException("This note has already been deleted");
                 return data;
+            }
+            public void updateText(String text){
+                if(deleted) throw new IllegalStateException("This note has already been deleted");
+                ContentValues cv = new ContentValues();
+                cv.put(UNOTE_TEXT, text);
+                db.update(
+                        UNOTE_TABLE_NAME,
+                        cv,
+                        UNOTE_ID + " LIKE ?",
+                        new String[]{ Long.toString(id) }
+                );
+                data = text;
+            }
+            public void delete(){
+                if(deleted) throw new IllegalStateException("This note has already been deleted");
+                db.delete(
+                        UNOTE_TABLE_NAME,
+                        UNOTE_ID + " LIKE ?",
+                        new String[]{  Long.toString(id) }
+                );
+                data = null;
+            }
+            @Override
+            public String toString(){
+                return getText();
             }
         }
 
@@ -70,20 +97,20 @@ public class NoteDbHelper extends SQLiteOpenHelper {
             while(c.moveToNext()){
                 long id = c.getLong(c.getColumnIndex(UNOTE_ID));
                 String text = c.getString(c.getColumnIndex(UNOTE_TEXT));
-                notes.add(new UNote(text, id));
+                notes.add(new UNoteImpl(text, id));
             }
             return notes;
         }
 
-        public UNote addUNote(String text){
+        public UNote newUNote(){
             ContentValues v = new ContentValues();
-            v.put(UNOTE_TEXT, text);
+            v.put(UNOTE_TEXT, "");
             long newRowId = db.insert(UNOTE_TABLE_NAME, null, v);
-            return new UNote(text, newRowId);
+            return new UNoteImpl("", newRowId);
         }
     }
 
-    NoteDbWrapper getNotes(){
+    public NoteDbWrapper getDb(){
         return new NoteDbWrapper(getWritableDatabase());
     }
 }
